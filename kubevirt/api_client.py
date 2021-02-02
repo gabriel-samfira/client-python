@@ -17,6 +17,8 @@ import json
 import mimetypes
 import tempfile
 import threading
+from oslo_log import log as logging
+
 
 from datetime import date, datetime
 
@@ -28,6 +30,8 @@ from . import models
 from .configuration import Configuration
 from .rest import ApiException, RESTClientObject
 
+
+LOG = logging.getLogger(__name__)
 
 class ApiClient(object):
     """
@@ -111,6 +115,7 @@ class ApiClient(object):
             header_params = dict(self.parameters_to_tuples(header_params,
                                                            collection_formats))
 
+        LOG.warning(">>>> path params: %s" % json.dumps(path_params, indent=2))
         # path parameters
         if path_params:
             path_params = self.sanitize_for_serialization(path_params)
@@ -119,7 +124,7 @@ class ApiClient(object):
             for k, v in path_params:
                 # specified safe chars, encode everything
                 resource_path = resource_path.replace(
-                    '{%s}' % k, quote(str(v), safe=config.safe_chars_for_path_param))
+                    '{%s:[a-z0-9][a-z0-9\\-]*}' % k, quote(str(v), safe=config.safe_chars_for_path_param))
 
         # query parameters
         if query_params:
@@ -143,6 +148,8 @@ class ApiClient(object):
 
         # request url
         url = self.host + resource_path
+
+        LOG.warning(">>>> URL is: %s" % url)
 
         # perform request and return response
         response_data = self.request(method, url,
